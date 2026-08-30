@@ -123,48 +123,39 @@
 
     // The pipe wall and the rupture share the jet's projected coordinate system.
     ctx.save();
-    const surfaceStart = [Rx(pipeLeft, leakY), Ry(pipeLeft, leakY)], surfaceEnd = [Rx(pipeRight, leakY), Ry(pipeRight, leakY)];
-    const surface = ctx.createLinearGradient(surfaceStart[0], surfaceStart[1], surfaceEnd[0], surfaceEnd[1]);
-    surface.addColorStop(0, `rgba(16,37,59,${a * .1})`);
-    surface.addColorStop(.18, `rgba(44,93,132,${a * .3})`);
-    surface.addColorStop(.66, `rgba(21,64,96,${a * .5})`);
-    surface.addColorStop(1, `rgba(72,135,180,${a * .44})`);
-    path([[pipeLeft, pipeTop], [pipeRight, pipeTop], [pipeRight, pipeBottom], [pipeLeft, pipeBottom]]);
-    ctx.fillStyle = surface; ctx.fill();
-
-    ctx.strokeStyle = `rgba(102,179,235,${a * .62})`; ctx.lineWidth = 2;
+    ctx.strokeStyle = `rgba(102,179,235,${a * .38})`; ctx.lineWidth = 1;
     line([[pipeLeft, pipeTop], [pipeRight, pipeTop]]);
     line([[pipeLeft, pipeBottom], [pipeRight, pipeBottom]]);
-    ctx.strokeStyle = `rgba(8,25,43,${a * .78})`; ctx.lineWidth = 4;
+    ctx.strokeStyle = `rgba(8,25,43,${a * .48})`; ctx.lineWidth = 1;
     line([[pipeLeft, pipeTop + 9], [pipeRight, pipeTop + 9]]);
     line([[pipeLeft, pipeBottom - 9], [pipeRight, pipeBottom - 9]]);
 
     [pipeLeft + w * .09, pipeLeft + w * .2, pipeLeft + w * .29].forEach(x => {
-      ctx.strokeStyle = `rgba(68,133,180,${a * .13})`; ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(68,133,180,${a * .1})`; ctx.lineWidth = .6;
       line([[x, pipeTop + 12], [x, pipeBottom - 12]]);
     });
     [leakY - 64, leakY, leakY + 64].forEach((yy, index) => {
       const start = Rx(pipeLeft, yy), end = Rx(pipeRight, yy);
       const rib = ctx.createLinearGradient(start, Ry(pipeLeft, yy), end, Ry(pipeRight, yy));
-      rib.addColorStop(0, `rgba(62,128,177,${a * .08})`);
-      rib.addColorStop(.42, `rgba(85,155,204,${a * (.24 - index * .025)})`);
-      rib.addColorStop(1, `rgba(110,187,235,${a * .58})`);
-      ctx.strokeStyle = rib; ctx.lineWidth = index === 1 ? 1.8 : 1.2;
+      rib.addColorStop(0, `rgba(62,128,177,${a * .05})`);
+      rib.addColorStop(.42, `rgba(85,155,204,${a * (.14 - index * .015)})`);
+      rib.addColorStop(1, `rgba(110,187,235,${a * .32})`);
+      ctx.strokeStyle = rib; ctx.lineWidth = index === 1 ? 1 : .75;
       line([[pipeLeft, yy], [pipeRight, yy]]);
     });
 
-    ctx.strokeStyle = `rgba(94,176,230,${a * .76})`; ctx.lineWidth = 2.2;
+    ctx.strokeStyle = `rgba(94,176,230,${a * .5})`; ctx.lineWidth = 1.1;
     line([[pipeRight, pipeTop], [pipeRight, leakY - slitHalf - 8]]);
     line([[pipeRight, leakY + slitHalf + 8], [pipeRight, pipeBottom]]);
 
     const rupture = [[wallX - 9, leakY - slitHalf - 7], [wallX + 2, leakY - slitHalf - 4], [wallX + 11, leakY - 12], [wallX + 19, leakY - 5], [wallX + 14, leakY + 3], [wallX + 18, leakY + 11], [wallX + 7, leakY + slitHalf - 2], [wallX - 9, leakY + slitHalf + 7]];
-    path(rupture); ctx.fillStyle = `rgba(5,21,38,${a * .93})`; ctx.fill();
-    ctx.strokeStyle = `rgba(84,167,224,${a * .82})`; ctx.lineWidth = 1.5; ctx.stroke();
+    path(rupture); ctx.fillStyle = `rgba(5,21,38,${a * .72})`; ctx.fill();
+    ctx.strokeStyle = `rgba(84,167,224,${a * .68})`; ctx.lineWidth = .9; ctx.stroke();
     path([[wallX - 9, leakY - slitHalf - 7], [wallX + 2, leakY - slitHalf - 4], [wallX + 11, leakY - 12], [wallX + 4, leakY - 7], [wallX - 7, leakY - 13]]);
-    ctx.fillStyle = `rgba(45,104,150,${a * .52})`; ctx.fill();
+    ctx.fillStyle = `rgba(45,104,150,${a * .32})`; ctx.fill();
     path([[wallX - 9, leakY + slitHalf + 7], [wallX + 7, leakY + slitHalf - 2], [wallX + 18, leakY + 11], [wallX + 5, leakY + 8], [wallX - 7, leakY + 13]]);
-    ctx.fillStyle = `rgba(23,69,111,${a * .68})`; ctx.fill();
-    ctx.strokeStyle = `rgba(75,158,255,${a * .92})`; ctx.lineWidth = 2;
+    ctx.fillStyle = `rgba(23,69,111,${a * .4})`; ctx.fill();
+    ctx.strokeStyle = `rgba(75,158,255,${a * .7})`; ctx.lineWidth = .9;
     line([[wallX - 5, leakY - 13], [wallX + 10, leakY - 5], [wallX + 14, leakY + 3], [wallX + 4, leakY + 12]]);
     ctx.restore();
     const flowStart = w * .23;
