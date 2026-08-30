@@ -161,8 +161,8 @@
     const flowStart = w * .23;
     const flowEnd = wallX - 8;
     const noise = value => { const sine = Math.sin(value * 12.9898) * 43758.5453; return sine - Math.floor(sine); };
-    for (let particle = 0; particle < 42; particle++) {
-      const seed = noise(particle * 2.73), phase = (t * (.055 + noise(particle * 4.19) * .04) + seed) % 1;
+    for (let particle = 0; particle < 68; particle++) {
+      const seed = noise(particle * 2.73), phase = (t * (.11 + noise(particle * 4.19) * .1) + seed) % 1;
       const x = flowStart + phase * (flowEnd - flowStart);
       const y = leakY + (noise(particle * 6.11) - .5) * 126 + Math.sin(t * (.7 + seed) + particle) * (2 + phase * 4);
       const tail = 2 + noise(particle * 8.27) * 5, opacity = a * (.05 + phase * .24) * (.65 + noise(particle * 9.41) * .35);
