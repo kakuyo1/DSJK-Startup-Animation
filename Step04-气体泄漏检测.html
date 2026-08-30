@@ -2,22 +2,30 @@
 (() => {
   const sceneName = document.body.dataset.scene;
   const sequence = sceneName === "combined";
-  const preview = new URLSearchParams(location.search).get("at");
+  const params = new URLSearchParams(location.search);
+  const preview = params.get("at");
   const previewAt = preview === null ? null : Number(preview);
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const scenes = {
-    localization: ["声源定位", "内置 200 枚 MEMS 麦克风"],
-    frequency: ["频段调节", "支持 2 kHz 至 96 kHz 频段调节"],
-    discharge: ["放电检测", "支持电晕、沿面、悬浮放电检测"],
-    leak: ["气体泄漏检测", "自动计算气体泄漏量与损失预估"],
-    ai: ["AI 辅助", "支持语音交互"]
+  const language = ["en", "nl"].includes(params.get("lang")) ? params.get("lang") : "zh";
+  const locales = {
+    zh: { numberLocale: "zh-CN", currency: "¥", annual: "/年", starting: "SUCH-200 启动中", statuses: ["系统加载中...", "初始化硬件驱动...", "加载声学算法引擎...", "启动 AI 推理模块...", "准备就绪", "启动完成"], scenes: { localization: ["声源定位", "内置 200 枚 MEMS 麦克风"], frequency: ["频段调节", "支持 2 kHz 至 96 kHz 频段调节"], discharge: ["放电检测", "支持电晕、沿面、悬浮放电检测"], leak: ["气体泄漏检测", "自动计算气体泄漏量与损失预估"], ai: ["AI 辅助", "支持语音交互"] } },
+    en: { numberLocale: "en-US", currency: "$", annual: "/yr", starting: "SUCH-200 starting", statuses: ["Loading...", "Starting hardware drivers...", "Loading acoustic engine...", "Starting AI module...", "Ready", "Startup complete"], scenes: { localization: ["Sound localization", "200 MEMS microphones"], frequency: ["Band tuning", "2-96 kHz tuning"], discharge: ["Discharge detection", "Corona, surface & floating discharge"], leak: ["Gas leak detection", "Leak rate & loss estimate"], ai: ["AI assistant", "Voice interaction"] } },
+    nl: { numberLocale: "nl-NL", currency: "€", annual: "/jaar", starting: "SUCH-200 start op", statuses: ["Laden...", "Hardwaredrivers starten...", "Akoestische kern laden...", "AI-module starten...", "Gereed", "Opstart voltooid"], scenes: { localization: ["Geluidslokalisatie", "200 MEMS-microfoons"], frequency: ["Bandafstelling", "2-96 kHz afstelling"], discharge: ["Ontladingsdetectie", "Corona-, oppervlakte- en zwevende ontlading"], leak: ["Gaslekdetectie", "Lekdebiet en verliesraming"], ai: ["AI-assistent", "Spraakinteractie"] } }
   };
+  const locale = locales[language];
+  const scenes = locale.scenes;
   const order = ["localization", "frequency", "discharge", "leak", "ai"];
+  const [initialTitle, initialDescription] = scenes[sceneName];
+  document.documentElement.lang = language === "zh" ? "zh-CN" : language;
+  document.title = initialTitle;
 
   document.head.insertAdjacentHTML("beforeend", `<style>
     :root{color-scheme:dark}*{box-sizing:border-box;user-select:none}body{margin:0;min-height:100vh;display:grid;place-items:center;overflow:hidden;background:#121621;color:#fff;font-family:"Microsoft YaHei","PingFang SC",sans-serif}.screen{position:relative;width:min(100vw,calc(100vh * 1.77778));aspect-ratio:16/9;overflow:hidden;background:radial-gradient(ellipse at 57% 48%,#172b43 0,#121621 57%,#0c1018 100%)}canvas,.curtain{position:absolute;inset:0;width:100%;height:100%}canvas{z-index:1}.screen::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(180deg,transparent,rgba(9,12,18,.74));z-index:2;pointer-events:none}.brand,.copy,.progress{position:absolute;z-index:3}.brand{top:6.2%;left:6.5%;display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:#acacac;font-size:clamp(12px,1.2vw,16px)}.brand .row{display:flex;align-items:center;gap:16px}.brand img{width:clamp(110px,12vw,156px);height:auto;margin-left:clamp(-18px,-1.38vw,-13px)}.brand strong{color:#fff;letter-spacing:.07em}.copy{left:6.5%;bottom:21%;max-width:52%}h1{margin:0;font-size:clamp(34px,4.8vw,68px);line-height:1.1;letter-spacing:.04em}.copy p{margin:13px 0 0;color:#cdd6e5;font-size:clamp(14px,1.4vw,20px);line-height:1.4}.progress{left:6.5%;right:6.5%;bottom:6.5%}.status{display:flex;justify-content:space-between;gap:16px;margin-bottom:10px;color:#acacac;font-size:clamp(11px,1vw,14px)}.status span:last-child{color:#fff}.rail{height:3px;background:#2a2f3a}.fill{width:0;height:100%;background:#4b9eff}.curtain{z-index:4;background:#0c1018;opacity:0;pointer-events:none}@media(max-width:700px){.brand{left:5%;top:5%}.brand img{width:104px;margin-left:-12px}.copy{left:7%;bottom:24%;max-width:70%}.progress{left:7%;right:7%;bottom:7%}}@media(prefers-reduced-motion:reduce){.fill{width:100%}}
+    .screen.lang-latin .copy{max-width:38%}.screen.lang-latin h1{font-size:clamp(28px,3.75vw,54px);letter-spacing:.01em}.screen.lang-latin .copy p{font-size:clamp(13px,1.2vw,17px)}@media(max-width:700px){.screen.lang-latin .copy{bottom:21%;max-width:42%}.screen.lang-latin h1{font-size:clamp(22px,6.7vw,30px)}}
+    html[lang="nl"] .screen.lang-latin .copy{max-width:34%}html[lang="nl"] .screen.lang-latin h1{font-size:clamp(24px,2.7vw,36px);letter-spacing:0}@media(max-width:700px){html[lang="nl"] .screen.lang-latin .copy{max-width:36%}html[lang="nl"] .screen.lang-latin h1{font-size:clamp(13px,3.4vw,16px);white-space:nowrap}}
+    html[lang="en"] .screen.lang-latin h1{font-size:clamp(26px,3.35vw,48px);letter-spacing:0}
   </style>`);
-  document.body.innerHTML = `<main class="screen" aria-label="SUCH-200 启动中"><canvas aria-hidden="true"></canvas><header class="brand"><span class="row"><img src="${window.__startupLogo}" alt="谛声科技"><strong>SUCH-200</strong></span></header><section class="copy"><h1 id="title">声源定位</h1><p id="description">内置 200 枚 MEMS 麦克风</p></section><div class="progress"><div class="status"><span id="status">系统加载中...</span><span id="percent">0%</span></div><div class="rail"><div class="fill" id="fill"></div></div></div><div class="curtain" id="curtain"></div></main>`;
+  document.body.innerHTML = `<main class="screen${language === "zh" ? "" : " lang-latin"}" aria-label="${locale.starting}"><canvas aria-hidden="true"></canvas><header class="brand"><span class="row"><img src="${window.__startupLogo}" alt="Ensonic"><strong>SUCH-200</strong></span></header><section class="copy"><h1 id="title">${initialTitle}</h1><p id="description">${initialDescription}</p></section><div class="progress"><div class="status"><span id="status">${locale.statuses[0]}</span><span id="percent">0%</span></div><div class="rail"><div class="fill" id="fill"></div></div></div><div class="curtain" id="curtain"></div></main>`;
 
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext("2d");
@@ -45,7 +53,7 @@
   }
   function startupPhase(elapsed) {
     const checkpoints = sequence ? [1.7, 3.2, 5.9, 7.8, 8.4] : [.9, 2, 3.5, 5, 5.7];
-    const labels = ["系统加载中...", "初始化硬件驱动...", "加载声学算法引擎...", "启动 AI 推理模块...", "准备就绪", "启动完成"];
+    const labels = locale.statuses;
     return labels[checkpoints.findIndex(checkpoint => elapsed < checkpoint) < 0 ? labels.length - 1 : checkpoints.findIndex(checkpoint => elapsed < checkpoint)];
   }
 
@@ -183,7 +191,7 @@
     ctx.textAlign = "right";
     ctx.fillText(rate.toFixed(2) + " m³/min", jx + gap + lb, jy - 16);
     ctx.textAlign = "left";
-    ctx.fillText("¥" + cost.toLocaleString() + "/年", jx - gap - lb, jy + 16);
+    ctx.fillText(locale.currency + cost.toLocaleString(locale.numberLocale) + locale.annual, jx - gap - lb, jy + 16);
     ctx.restore();
   }
 
