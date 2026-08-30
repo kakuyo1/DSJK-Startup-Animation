@@ -102,30 +102,71 @@
   }
 
   function leak(w, h, t, a) {
-    const wallX = w * .51, leakY = h * .47, slitHalf = 18;
+    const wallX = w * .51, leakY = h * .47, slitHalf = 25;
     const jetEndX = w * .84, jetEndY = h * .53;
-    const s = .62, H = 1.7, rX = w * .78, rY = h * .51;
+    const compact = w < 700;
+    const s = .62, H = 1.7, rX = w * (compact ? .7 : .78), rY = h * .51;
     const Rx = (ox, oy) => rX + (oy - leakY) * s * H;
     const Ry = (ox, oy) => rY - (ox - wallX) * s;
-    ctx.lineWidth = 2;
-    [[leakY - 78], [leakY + 78], [leakY - 58], [leakY + 58]].forEach(([yy]) => {
-      const x1 = w * .2, x2 = wallX - 5;
-      const xa = Rx(x1, yy), ya = Ry(x1, yy), xb = Rx(x2, yy), yb = Ry(x2, yy);
-      const grad = ctx.createLinearGradient(xa, ya, xb, yb);
-      grad.addColorStop(0, `rgba(224,228,235,0)`);
-      grad.addColorStop(.15, `rgba(224,228,235,${a * .8})`);
-      ctx.strokeStyle = grad;
-      ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke();
+    const pipeLeft = w * .18, pipeRight = wallX - 6, pipeHalfHeight = compact ? 50 : 104;
+    const pipeTop = leakY - pipeHalfHeight, pipeBottom = leakY + pipeHalfHeight;
+    const path = points => {
+      ctx.beginPath();
+      points.forEach(([x, y], index) => index ? ctx.lineTo(Rx(x, y), Ry(x, y)) : ctx.moveTo(Rx(x, y), Ry(x, y)));
+      ctx.closePath();
+    };
+    const line = points => {
+      ctx.beginPath();
+      points.forEach(([x, y], index) => index ? ctx.lineTo(Rx(x, y), Ry(x, y)) : ctx.moveTo(Rx(x, y), Ry(x, y)));
+      ctx.stroke();
+    };
+
+    // The pipe wall and the rupture share the jet's projected coordinate system.
+    ctx.save();
+    const surfaceStart = [Rx(pipeLeft, leakY), Ry(pipeLeft, leakY)], surfaceEnd = [Rx(pipeRight, leakY), Ry(pipeRight, leakY)];
+    const surface = ctx.createLinearGradient(surfaceStart[0], surfaceStart[1], surfaceEnd[0], surfaceEnd[1]);
+    surface.addColorStop(0, `rgba(30,46,62,${a * .1})`);
+    surface.addColorStop(.18, `rgba(89,113,132,${a * .3})`);
+    surface.addColorStop(.66, `rgba(39,59,76,${a * .5})`);
+    surface.addColorStop(1, `rgba(125,147,162,${a * .44})`);
+    path([[pipeLeft, pipeTop], [pipeRight, pipeTop], [pipeRight, pipeBottom], [pipeLeft, pipeBottom]]);
+    ctx.fillStyle = surface; ctx.fill();
+
+    ctx.strokeStyle = `rgba(224,231,236,${a * .62})`; ctx.lineWidth = 2;
+    line([[pipeLeft, pipeTop], [pipeRight, pipeTop]]);
+    line([[pipeLeft, pipeBottom], [pipeRight, pipeBottom]]);
+    ctx.strokeStyle = `rgba(7,14,23,${a * .78})`; ctx.lineWidth = 4;
+    line([[pipeLeft, pipeTop + 9], [pipeRight, pipeTop + 9]]);
+    line([[pipeLeft, pipeBottom - 9], [pipeRight, pipeBottom - 9]]);
+
+    [pipeLeft + w * .09, pipeLeft + w * .2, pipeLeft + w * .29].forEach(x => {
+      ctx.strokeStyle = `rgba(203,217,228,${a * .13})`; ctx.lineWidth = 1;
+      line([[x, pipeTop + 12], [x, pipeBottom - 12]]);
     });
-    ctx.strokeStyle = `rgba(224,228,235,${a * .8})`; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(Rx(wallX, leakY - 78), Ry(wallX, leakY - 78)); ctx.lineTo(Rx(wallX, leakY - slitHalf), Ry(wallX, leakY - slitHalf));
-    ctx.moveTo(Rx(wallX, leakY + slitHalf), Ry(wallX, leakY + slitHalf)); ctx.lineTo(Rx(wallX, leakY + 78), Ry(wallX, leakY + 78));
-    ctx.stroke();
-    ctx.strokeStyle = `rgba(75,158,255,${a})`; ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(Rx(wallX, leakY - slitHalf), Ry(wallX, leakY - slitHalf)); ctx.lineTo(Rx(wallX + 14, leakY), Ry(wallX + 14, leakY)); ctx.lineTo(Rx(wallX, leakY + slitHalf), Ry(wallX, leakY + slitHalf));
-    ctx.stroke();
+    [leakY - 64, leakY, leakY + 64].forEach((yy, index) => {
+      const start = Rx(pipeLeft, yy), end = Rx(pipeRight, yy);
+      const rib = ctx.createLinearGradient(start, Ry(pipeLeft, yy), end, Ry(pipeRight, yy));
+      rib.addColorStop(0, `rgba(212,223,232,${a * .08})`);
+      rib.addColorStop(.42, `rgba(221,230,237,${a * (.24 - index * .025)})`);
+      rib.addColorStop(1, `rgba(241,246,250,${a * .58})`);
+      ctx.strokeStyle = rib; ctx.lineWidth = index === 1 ? 1.8 : 1.2;
+      line([[pipeLeft, yy], [pipeRight, yy]]);
+    });
+
+    ctx.strokeStyle = `rgba(236,242,247,${a * .76})`; ctx.lineWidth = 2.2;
+    line([[pipeRight, pipeTop], [pipeRight, leakY - slitHalf - 8]]);
+    line([[pipeRight, leakY + slitHalf + 8], [pipeRight, pipeBottom]]);
+
+    const rupture = [[wallX - 9, leakY - slitHalf - 7], [wallX + 2, leakY - slitHalf - 4], [wallX + 11, leakY - 12], [wallX + 19, leakY - 5], [wallX + 14, leakY + 3], [wallX + 18, leakY + 11], [wallX + 7, leakY + slitHalf - 2], [wallX - 9, leakY + slitHalf + 7]];
+    path(rupture); ctx.fillStyle = `rgba(5,13,22,${a * .93})`; ctx.fill();
+    ctx.strokeStyle = `rgba(147,184,211,${a * .82})`; ctx.lineWidth = 1.5; ctx.stroke();
+    path([[wallX - 9, leakY - slitHalf - 7], [wallX + 2, leakY - slitHalf - 4], [wallX + 11, leakY - 12], [wallX + 4, leakY - 7], [wallX - 7, leakY - 13]]);
+    ctx.fillStyle = `rgba(116,144,165,${a * .52})`; ctx.fill();
+    path([[wallX - 9, leakY + slitHalf + 7], [wallX + 7, leakY + slitHalf - 2], [wallX + 18, leakY + 11], [wallX + 5, leakY + 8], [wallX - 7, leakY + 13]]);
+    ctx.fillStyle = `rgba(66,91,112,${a * .68})`; ctx.fill();
+    ctx.strokeStyle = `rgba(75,158,255,${a * .92})`; ctx.lineWidth = 2;
+    line([[wallX - 5, leakY - 13], [wallX + 10, leakY - 5], [wallX + 14, leakY + 3], [wallX + 4, leakY + 12]]);
+    ctx.restore();
     const flowStart = w * .23;
     const flowEnd = wallX - 8;
     for (let lane = -3; lane <= 3; lane++) {
@@ -186,12 +227,12 @@
     ring(Rx(wallX, leakY), Ry(wallX, leakY), 15 + Math.sin(t * 4) * 2, "#4b9eff", 2); ring(Rx(wallX, leakY), Ry(wallX, leakY), 32 + Math.sin(t * 3) * 3, `rgba(75,158,255,${a * .25})`); dot(Rx(wallX, leakY), Ry(wallX, leakY), 4, "#fff");
     const rate = (1.2 + Math.sin(t * 2.1) * .15 + Math.sin(t * 4.3) * .07) * (1 + Math.min(t * .02, .2));
     const cost = 320 + Math.floor(t * 9 + Math.sin(t * 1.7) * 3) * 74;
-    const jx = Rx(jetEndX, jetEndY), jy = Ry(jetEndX, jetEndY), lb = Math.sin(t * 1.6) * 6, gap = 30;
+    const jx = Rx(jetEndX, jetEndY), jy = Ry(jetEndX, jetEndY), lb = Math.sin(t * 1.6) * 6, gap = 30, metricShift = compact ? w * .1 : 0;
     ctx.save(); ctx.globalAlpha = a * .95; ctx.fillStyle = "#fff"; ctx.font = "bold 13px Consolas,monospace"; ctx.textBaseline = "middle";
     ctx.textAlign = "right";
-    ctx.fillText(rate.toFixed(2) + " m³/min", jx + gap + lb, jy - 16);
+    ctx.fillText(rate.toFixed(2) + " m³/min", jx + gap + lb - metricShift, jy - 16);
     ctx.textAlign = "left";
-    ctx.fillText(locale.currency + cost.toLocaleString(locale.numberLocale) + locale.annual, jx - gap - lb, jy + 16);
+    ctx.fillText(locale.currency + cost.toLocaleString(locale.numberLocale) + locale.annual, jx - gap - lb - metricShift, jy + 16);
     ctx.restore();
   }
 
