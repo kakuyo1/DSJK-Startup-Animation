@@ -70,7 +70,7 @@
   function frequency(w, h, t, a) {
     const left = w * .46, top = h * .22, bw = w * .4 / 54;
     const span = w * .4, yB = top + h * .36;
-    const bandFreq = 2 + (.5 + .5 * Math.sin(t * 1.1)) * 94;
+    const bandFreq = 2 + (.5 + .5 * Math.sin(t * 1.1 - Math.PI / 2)) * 94;
     const bandW = 8;
     for (let i = 0; i < 54; i++) {
       const e = (Math.sin(i * .44 + t * 3) + Math.sin(i * .12 - t) + 2) / 4;
