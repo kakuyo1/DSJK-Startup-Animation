@@ -108,7 +108,7 @@
     const s = .62, H = 1.7, rX = w * (compact ? .7 : .78), rY = h * .51;
     const Rx = (ox, oy) => rX + (oy - leakY) * s * H;
     const Ry = (ox, oy) => rY - (ox - wallX) * s;
-    const pipeLeft = w * .18, pipeRight = wallX - 6, pipeHalfHeight = compact ? 50 : 104;
+    const pipeLeft = w * .18, pipeRight = wallX - 6, pipeHalfHeight = compact ? 35 : 73;
     const pipeTop = leakY - pipeHalfHeight, pipeBottom = leakY + pipeHalfHeight;
     const path = points => {
       ctx.beginPath();
@@ -161,15 +161,31 @@
     const flowStart = w * .23;
     const flowEnd = wallX - 8;
     const noise = value => { const sine = Math.sin(value * 12.9898) * 43758.5453; return sine - Math.floor(sine); };
-    for (let particle = 0; particle < 68; particle++) {
-      const seed = noise(particle * 2.73), phase = (t * (.11 + noise(particle * 4.19) * .1) + seed) % 1;
-      const x = flowStart + phase * (flowEnd - flowStart);
-      const y = leakY + (noise(particle * 6.11) - .5) * 126 + Math.sin(t * (.7 + seed) + particle) * (2 + phase * 4);
-      const tail = 2 + noise(particle * 8.27) * 5, opacity = a * (.05 + phase * .24) * (.65 + noise(particle * 9.41) * .35);
-      ctx.strokeStyle = `rgba(75,158,255,${opacity})`; ctx.lineWidth = .55 + noise(particle * 3.91) * .5;
-      ctx.beginPath(); ctx.moveTo(Rx(x - tail, y), Ry(x - tail, y)); ctx.lineTo(Rx(x, y), Ry(x, y)); ctx.stroke();
-      if (particle % 3 === 0) dot(Rx(x, y), Ry(x, y), .65 + noise(particle * 5.37) * .55, `rgba(110,187,235,${opacity})`);
+    const pipeHalf = pipeHalfHeight * .65;
+    const cloud = (x, y, radius, opacity, drift) => {
+      [[0, 0, 1], [-.55, -.34, .62], [.5, -.44, .68], [.26, .48, .72]].forEach(([dx, dy, scale], index) => {
+        const cx = Rx(x + dx * radius, y + dy * radius), cy = Ry(x + dx * radius, y + dy * radius);
+        const r = radius * scale;
+        const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gradient.addColorStop(0, `rgba(75,158,255,${opacity * (.58 - index * .06)})`);
+        gradient.addColorStop(.48, `rgba(75,158,255,${opacity * .22})`);
+        gradient.addColorStop(1, "rgba(75,158,255,0)");
+        ctx.fillStyle = gradient; ctx.beginPath();
+        ctx.ellipse(cx, cy, r, r * (.58 + Math.sin(drift + index) * .08), drift * .12, 0, Math.PI * 2); ctx.fill();
+      });
+    };
+    ctx.save(); path([[flowStart, leakY - pipeHalf], [flowEnd, leakY - pipeHalf], [flowEnd, leakY + pipeHalf], [flowStart, leakY + pipeHalf]]); ctx.clip();
+    for (let lane = -1; lane <= 1; lane++) for (let puff = 0; puff < 6; puff++) {
+      const phase = (t * (.055 + puff * .008 + (lane + 1) * .006) + puff / 6 + (lane + 1) * .19) % 1;
+      const travel = phase * phase;
+      const x = flowStart + travel * (flowEnd - flowStart);
+      const y = leakY + lane * pipeHalf * .48 + Math.sin(t * (.55 + puff * .11) + puff * 2.4 + lane) * (pipeHalf * .1 - travel * 2);
+      const entrance = Math.min(1, travel / .3);
+      cloud(x, y, (16 - travel * 7) * (.65 + entrance * .35), a * (.12 + travel * .08) * entrance * entrance, t + puff + lane);
     }
+    const pulse = Math.pow(Math.max(0, Math.sin(t * 2.6)), 10);
+    cloud(flowEnd - 10, leakY, 7 + pulse * 7, a * pulse * .2, t * 1.4);
+    ctx.restore();
     const release = .72 + Math.pow((Math.sin(t * 2.2) + 1) * .5, 5) * .28;
     for (let stream = -2; stream <= 2; stream++) {
       const spread = stream * 5.5;
