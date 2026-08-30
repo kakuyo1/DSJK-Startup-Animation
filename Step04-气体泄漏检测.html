@@ -160,28 +160,22 @@
     ctx.restore();
     const flowStart = w * .23;
     const flowEnd = wallX - 8;
-    for (let lane = -3; lane <= 3; lane++) {
-      for (let segment = 0; segment < 11; segment++) {
-        if ((segment * 3 + lane * 5) % 7 === 0) continue;
-        const flow = (segment / 11 + t * (.15 + ((lane + 3) % 3) * .025) + lane * .037) % 1;
-        const x = flowStart + flow * (flowEnd - flowStart);
-        const baseY = leakY + lane * 20;
-        const y = baseY + Math.sin(flow * Math.PI + t * 2 + lane) * (7 * (1 - flow));
-        const length = 6 + ((segment * 11 + lane * 7) % 3) * 7;
-        const brightness = (segment + lane + 9) % 3;
-        const opacity = brightness === 0 ? .62 : brightness === 1 ? .32 : .12;
-        ctx.strokeStyle = `rgba(224,228,235,${a * opacity})`;
-        ctx.lineWidth = brightness === 0 ? 1.3 : brightness === 1 ? 1 : .8;
-        ctx.beginPath();
-        ctx.moveTo(Rx(x - length, y), Ry(x - length, y)); ctx.lineTo(Rx(x, y), Ry(x, y));
-        ctx.stroke();
-      }
+    const noise = value => { const sine = Math.sin(value * 12.9898) * 43758.5453; return sine - Math.floor(sine); };
+    for (let particle = 0; particle < 42; particle++) {
+      const seed = noise(particle * 2.73), phase = (t * (.055 + noise(particle * 4.19) * .04) + seed) % 1;
+      const x = flowStart + phase * (flowEnd - flowStart);
+      const y = leakY + (noise(particle * 6.11) - .5) * 126 + Math.sin(t * (.7 + seed) + particle) * (2 + phase * 4);
+      const tail = 2 + noise(particle * 8.27) * 5, opacity = a * (.05 + phase * .24) * (.65 + noise(particle * 9.41) * .35);
+      ctx.strokeStyle = `rgba(75,158,255,${opacity})`; ctx.lineWidth = .55 + noise(particle * 3.91) * .5;
+      ctx.beginPath(); ctx.moveTo(Rx(x - tail, y), Ry(x - tail, y)); ctx.lineTo(Rx(x, y), Ry(x, y)); ctx.stroke();
+      if (particle % 3 === 0) dot(Rx(x, y), Ry(x, y), .65 + noise(particle * 5.37) * .55, `rgba(110,187,235,${opacity})`);
     }
-    for (let stream = -7; stream <= 7; stream++) {
-      const spread = stream * 4.5;
+    const release = .72 + Math.pow((Math.sin(t * 2.2) + 1) * .5, 5) * .28;
+    for (let stream = -2; stream <= 2; stream++) {
+      const spread = stream * 5.5;
       const wobble1 = Math.sin(t * 2.4 + stream * .6) * 6;
       const wobble2 = Math.sin(t * 2.1 + stream * .4 + 1.3) * 7;
-      const alpha = a * (.08 + (7 - Math.abs(stream)) * .014);
+      const alpha = a * (.11 + (2 - Math.abs(stream)) * .025) * release;
       const eY = jetEndY + spread + Math.sin(t * 2.6 + stream) * 3;
       const sx0 = Rx(wallX + 5, leakY + spread * .18), sy0 = Ry(wallX + 5, leakY + spread * .18);
       const sx1 = Rx(jetEndX, eY), sy1 = Ry(jetEndX, eY);
@@ -189,31 +183,18 @@
       grad.addColorStop(0, `rgba(75,158,255,${alpha})`);
       grad.addColorStop(.72, `rgba(75,158,255,${alpha})`);
       grad.addColorStop(1, `rgba(75,158,255,0)`);
-      ctx.strokeStyle = grad; ctx.lineWidth = 1.2;
+      ctx.strokeStyle = grad; ctx.lineWidth = .6;
       ctx.beginPath(); ctx.moveTo(sx0, sy0);
       ctx.bezierCurveTo(Rx(w * .62, leakY + spread * .42 + wobble1), Ry(w * .62, leakY + spread * .42 + wobble1), Rx(w * .72, jetEndY + spread * .72 + wobble2), Ry(w * .72, jetEndY + spread * .72 + wobble2), sx1, sy1);
       ctx.stroke();
     }
-    for (let vortex = 0; vortex < 5; vortex++) {
-      const h2f = v => { const s = Math.sin(v * 12.9898) * 43758.5453; return s - Math.floor(s); };
-      const r0 = h2f(vortex), r1 = h2f(vortex * 1.7), r2 = h2f(vortex * 3.3);
-      const speed = .18 + r1 * .5;
-      const phase = (t * speed + r0) % 1;
-      const tdir = r2 < .5 ? 1 : -1;
-      const dist = 6 + phase * (jetEndX - wallX) * (1 + r1 * .3);
-      const tx = wallX + dist;
-      const spread = Math.sin(r2 * 6 + phase * (3 + r0 * 4)) * (2 + phase * (18 + r1 * 40));
-      const ty = leakY + tdir * spread;
-      const r = 4 + phase * (14 + r1 * 12) + Math.sin(t * (3 + r2 * 3) + r0 * 7) * .9;
-      const rot = Math.sin(t * (1.5 + r0 * 1.5) + vortex) * .6;
-      ctx.strokeStyle = `rgba(75,158,255,${a * .24 * (1 - phase)})`; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.arc(Rx(tx, ty), Ry(tx, ty), r, .3 + rot, Math.PI * 1.9 + rot); ctx.stroke();
-    }
-    for (let i = 0; i < 38; i++) {
-      const progress = (t * .65 + i / 38) % 1;
+    for (let i = 0; i < 66; i++) {
+      const seed = noise(i * 3.17), progress = (t * (.32 + noise(i * 7.13) * .28) + i / 66) % 1;
       const x = wallX + 4 + progress * (jetEndX - wallX - 4);
-      const y = leakY + progress * (jetEndY - leakY) + Math.sin(i * 1.7 + t * 4) * (4 + progress * 42);
-      dot(Rx(x, y), Ry(x, y), progress < .5 ? 2.3 : 1.2, `rgba(75,158,255,${a * (1 - progress * .42) * Math.min(1, (1 - progress) * 3)})`);
+      const spread = (seed - .5) * (10 + progress * 94) + Math.sin(t * (1.2 + seed) + i) * (3 + progress * 8);
+      const y = leakY + progress * (jetEndY - leakY) + spread;
+      const opacity = a * release * (.12 + (1 - progress) * .26) * (.55 + noise(i * 5.41) * .45);
+      dot(Rx(x, y), Ry(x, y), .65 + noise(i * 9.29) * 1.1, `rgba(75,158,255,${opacity})`);
     }
     ring(Rx(wallX, leakY), Ry(wallX, leakY), 15 + Math.sin(t * 4) * 2, "#4b9eff", 2); ring(Rx(wallX, leakY), Ry(wallX, leakY), 32 + Math.sin(t * 3) * 3, `rgba(75,158,255,${a * .25})`); dot(Rx(wallX, leakY), Ry(wallX, leakY), 4, "#fff");
     const rate = (1.2 + Math.sin(t * 2.1) * .15 + Math.sin(t * 4.3) * .07) * (1 + Math.min(t * .02, .2));
