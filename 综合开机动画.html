@@ -24,7 +24,7 @@
     :root{color-scheme:dark}*{box-sizing:border-box;user-select:none}body{margin:0;min-height:100vh;display:grid;place-items:center;overflow:hidden;background:#121621;color:#fff;font-family:"Microsoft YaHei","PingFang SC",sans-serif}.screen{position:relative;width:min(100vw,calc(100vh * 1.77778));aspect-ratio:16/9;overflow:hidden;background:radial-gradient(ellipse at 57% 48%,#172b43 0,#121621 57%,#0c1018 100%)}canvas,.curtain{position:absolute;inset:0;width:100%;height:100%}canvas{z-index:1}.screen::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(180deg,transparent,rgba(9,12,18,.74));z-index:2;pointer-events:none}.brand,.copy,.progress{position:absolute;z-index:3}.brand{top:6.2%;left:6.5%;display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:#acacac;font-size:clamp(12px,1.2vw,16px)}.brand .row{display:flex;align-items:center;gap:16px}.brand img{width:clamp(110px,12vw,156px);height:auto;margin-left:clamp(-18px,-1.38vw,-13px)}.brand strong{color:#fff;letter-spacing:.07em}.copy{left:6.5%;bottom:21%;max-width:52%}.copy.ready{left:50%;top:50%;bottom:auto;max-width:90%;text-align:center;transform:translate(-50%,-50%)}h1{margin:0;font-size:clamp(34px,4.8vw,68px);line-height:1.1;letter-spacing:.04em}.copy p{margin:13px 0 0;color:#cdd6e5;font-size:clamp(14px,1.4vw,20px);line-height:1.4}.progress{left:6.5%;right:6.5%;bottom:6.5%}.status{display:flex;justify-content:space-between;gap:16px;margin-bottom:10px;color:#acacac;font-size:clamp(11px,1vw,14px)}.status span:last-child{color:#fff}.rail{height:3px;background:#2a2f3a}.fill{width:0;height:100%;background:#4b9eff}.curtain{z-index:4;background:#0c1018;opacity:0;pointer-events:none}@media(max-width:700px){.brand{left:5%;top:5%}.brand img{width:104px;margin-left:-12px}.copy{left:7%;bottom:24%;max-width:70%}.progress{left:7%;right:7%;bottom:7%}}@media(prefers-reduced-motion:reduce){.fill{width:100%}}
     .ai-transcript{position:absolute;z-index:2;display:none;white-space:nowrap;pointer-events:none;font-size:clamp(14px,1.35vw,19px);line-height:1}.ai-input{left:41%;top:40%;color:#bcdaf4;animation:aiInputFloat 3.6s ease-in-out infinite}.ai-output{left:78%;top:47.9%;color:#fff;animation:aiOutputFloat 4.1s ease-in-out infinite}@keyframes aiInputFloat{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,-2.2px)}}@keyframes aiOutputFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}@media(max-width:700px){.ai-output{top:56%;font-size:clamp(9px,2.6vw,11px)}}@media(prefers-reduced-motion:reduce){.ai-transcript{animation:none}}
     .screen.lang-latin .copy{max-width:38%}.screen.lang-latin h1{font-size:clamp(28px,3.75vw,54px);letter-spacing:.01em}.screen.lang-latin .copy p{font-size:clamp(13px,1.2vw,17px)}@media(max-width:700px){.screen.lang-latin .copy{bottom:21%;max-width:42%}.screen.lang-latin h1{font-size:clamp(22px,6.7vw,30px)}.screen.lang-latin .ai-transcript{display:none!important}}html[lang="nl"] .screen.lang-latin .copy{max-width:34%}html[lang="nl"] .screen.lang-latin h1{font-size:clamp(24px,2.7vw,36px);letter-spacing:0}@media(max-width:700px){html[lang="nl"] .screen.lang-latin .copy{max-width:36%}html[lang="nl"] .screen.lang-latin h1{font-size:clamp(13px,3.4vw,16px);white-space:nowrap}}
-    html[lang="en"] .screen.lang-latin h1{font-size:clamp(26px,3.35vw,48px);letter-spacing:0}
+    html[lang="en"] .screen.lang-latin h1{font-size:clamp(26px,3.35vw,48px);letter-spacing:0}.ai-input{left:41.5%;top:39%}.ai-output{left:82.5%;top:47.2%}
     </style>`);
   document.body.innerHTML = `<main class="screen${language === "zh" ? "" : " lang-latin"}" aria-label="${locale.starting}"><canvas aria-hidden="true"></canvas><span class="ai-transcript ai-input" id="ai-input">${locale.input}</span><span class="ai-transcript ai-output" id="ai-output">${locale.output}</span><header class="brand"><span class="row"><img src="${window.__startupLogo}" alt="Ensonic"><strong>SUCH-200</strong></span></header><section class="copy"><h1 id="title">${initialTitle}</h1><p id="description">${initialDescription}</p></section><div class="progress"><div class="status"><span id="status">${locale.statuses[0]}</span><span id="percent">0%</span></div><div class="rail"><div class="fill" id="fill"></div></div></div><div class="curtain" id="curtain"></div></main>`;
 
@@ -292,43 +292,64 @@
   }
 
   function ai(w, h, t, a) {
-    const cy = h * .49, inputX = w * .38, outputX = w * .78;
+    const compact = w < 701, cy = h * (compact ? .35 : .49), inputX = w * .385;
     const dialogueTime = reduced ? 1.2 : sequence ? Math.max(0, Math.min(1.18, t - 8)) : Math.min(t, 1.2);
     const reveal = (start, duration) => Math.max(0, Math.min(1, (dialogueTime - start) / duration));
-    const input = reveal(0, .16), stage1 = reveal(.1, .16), stage2 = reveal(.22, .16), stage3 = reveal(.36, .16), stage4 = reveal(.5, .16), stage5 = reveal(.64, .16), reply = reveal(.78, .26);
-    const layer = (x, count, spacing, opacity) => ({ x, ys: Array.from({ length: count }, (_, i) => cy + (i - (count - 1) / 2) * h * spacing), opacity });
-    const layers = [layer(w * .50, 6, .055, stage1), layer(w * .55, 9, .043, stage2), layer(w * .61, 8, .048, stage3), layer(w * .67, 6, .055, stage4), layer(w * .72, 4, .065, stage5)];
-    for (let i = 0; i < 15; i++) {
-      const x = inputX + i * w * .0042, wave = Math.sin(t * 9 + i * .85) * .5 + .5, height = 8 + wave * h * .07;
-      const lum = a * input * (.22 + wave * .48), g = ctx.createLinearGradient(x, cy - height / 2, x, cy + height / 2);
-      g.addColorStop(0, `rgba(75,158,255,0)`); g.addColorStop(.22, `rgba(75,158,255,${lum * .55})`); g.addColorStop(.5, `rgba(75,158,255,${lum})`); g.addColorStop(.78, `rgba(75,158,255,${lum * .55})`); g.addColorStop(1, `rgba(75,158,255,0)`);
-      ctx.strokeStyle = g; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(x, cy - height / 2); ctx.lineTo(x, cy + height / 2); ctx.stroke();
+    const input = reveal(0, .16), reply = reveal(.78, .26);
+    const visibility = [.08, .18, .28, .38, .48, .58].map(start => reveal(start, .16));
+    const sliceCount = 6, gridSize = 5, originX = w * .635;
+    const sliceAngles = [80, 80, 80, -80, -80, -80].map(degrees => degrees * Math.PI / 180);
+    const halfSize = Math.min(w * .075, h * .15) * (compact ? .82 : 1), focalLength = w * 1.35;
+    const sliceScales = Array.from({ length: sliceCount }, (_, index) => index === 0 || index === sliceCount - 1 ? .78 : 1);
+    const sliceWidths = sliceAngles.map((angle, index) => 2 * halfSize * sliceScales[index] * Math.cos(angle));
+    const standardGap = w * .025, centerGap = w * .055, sliceGaps = [standardGap, standardGap, centerGap, standardGap, standardGap];
+    const sliceCenters = []; let cursor = -(sliceWidths.reduce((total, width) => total + width, 0) + sliceGaps.reduce((total, gap) => total + gap, 0)) / 2;
+    sliceWidths.forEach((width, index) => { sliceCenters.push(cursor + width / 2); cursor += width + (sliceGaps[index] || 0); });
+    const project = (x, y, z) => { const scale = focalLength / (focalLength - z); return { x: originX + x * scale, y: cy - y * scale, scale }; };
+    const slices = visibility.map((opacity, index) => {
+      const centerX = sliceCenters[index], angle = sliceAngles[index], sin = Math.sin(angle), cos = Math.cos(angle), sliceScale = sliceScales[index];
+      const floatX = Math.sin(t * .42 + index * 1.7) * w * .003, floatY = Math.sin(t * .55 + index * 2.1) * h * .012;
+      const rotate = (x, y) => project(centerX + floatX + x * cos, y + floatY, -x * sin);
+      const nodes = Array.from({ length: gridSize * gridSize }, (_, node) => { const column = node % gridSize, row = Math.floor(node / gridSize); return rotate((-halfSize + column * halfSize * 2 / (gridSize - 1)) * sliceScale, (halfSize - row * halfSize * 2 / (gridSize - 1)) * sliceScale); });
+      const corners = [[-halfSize * sliceScale, halfSize * sliceScale], [halfSize * sliceScale, halfSize * sliceScale], [halfSize * sliceScale, -halfSize * sliceScale], [-halfSize * sliceScale, -halfSize * sliceScale]].map(([x, y]) => rotate(x, y));
+      return { opacity, nodes, corners, depth: -centerX * sin };
+    });
+    for (let i = 0; i < 17; i++) {
+      const x = inputX + i * w * .0037, wave = Math.sin(t * 9 + i * .85) * .5 + .5, height = 8 + wave * h * .07;
+      const lum = a * input * (.16 + wave * .52), gradient = ctx.createLinearGradient(x, cy - height / 2, x, cy + height / 2);
+      gradient.addColorStop(0, "rgba(75,169,238,0)"); gradient.addColorStop(.25, `rgba(75,169,238,${lum * .48})`); gradient.addColorStop(.5, `rgba(185,230,255,${lum})`); gradient.addColorStop(.75, `rgba(75,169,238,${lum * .48})`); gradient.addColorStop(1, "rgba(75,169,238,0)");
+      ctx.strokeStyle = gradient; ctx.lineWidth = 1.35; ctx.beginPath(); ctx.moveTo(x, cy - height / 2); ctx.lineTo(x, cy + height / 2); ctx.stroke();
     }
-    function edge(x1, y1, x2, y2, opacity, seed) {
-      const w = ((seed * 31 + 17) % 97) / 48.5 - 1, mw = Math.abs(w);
-      ctx.strokeStyle = `rgba(75,158,255,${a * (.08 + mw * (.15 + opacity * .42))})`; ctx.lineWidth = 1;
-      waveLine(x1, y1, x2, y2, t * (1 + (seed % 3) * .14), h * (.01 + (seed % 4) * .003), seed * 1.7);
-    }
-    function join(source, target, opacity, seed) {
-      source.ys.forEach((y, i) => {
-        const base = Math.round(i * (target.ys.length - 1) / (source.ys.length - 1));
-        const picks = [base, Math.max(0, Math.min(target.ys.length - 1, base + (i % 2 ? 1 : -1)))];
-        if (i % 3 === 0) picks.push(Math.max(0, Math.min(target.ys.length - 1, base + (i % 2 ? -1 : 1))));
-        [...new Set(picks)].forEach((to, j) => edge(source.x, y, target.x, target.ys[to], opacity, seed + i * 3 + j));
+    [...slices].sort((left, right) => left.depth - right.depth).forEach(slice => {
+      const [topLeft, topRight, bottomRight, bottomLeft] = slice.corners;
+      ctx.save(); ctx.setLineDash([2, 5]); ctx.strokeStyle = `rgba(111,200,241,${a * slice.opacity * .34})`; ctx.lineWidth = .8;
+      ctx.beginPath(); ctx.moveTo(topLeft.x, topLeft.y); ctx.lineTo(topRight.x, topRight.y); ctx.lineTo(bottomRight.x, bottomRight.y); ctx.lineTo(bottomLeft.x, bottomLeft.y); ctx.closePath(); ctx.stroke(); ctx.restore();
+    });
+    for (let layer = 0; layer < sliceCount - 1; layer++) {
+      const source = slices[layer], target = slices[layer + 1], opacity = Math.min(source.opacity, target.opacity);
+      source.nodes.forEach((from, index) => {
+        const connect = (targetIndex, seed, strength) => {
+          const selected = Math.floor(seed * 19) % 11 === 0, activation = reveal(.16 + layer * .1, .18), weight = selected ? .02 + activation * .82 : .2;
+          ctx.strokeStyle = `rgba(75,158,255,${a * opacity * strength * weight})`; ctx.lineWidth = .55;
+          waveLine(from.x, from.y, target.nodes[targetIndex].x, target.nodes[targetIndex].y, t * .42, h * .006, seed);
+        };
+        const row = Math.floor(index / gridSize), column = index % gridSize, direction = (layer + column) % 2 ? 1 : -1, primaryRow = (row + direction + gridSize) % gridSize;
+        connect(primaryRow * gridSize + column, layer * gridSize * gridSize + index, .36);
+        if ((index + layer) % 3 === 0) { const secondaryRow = (row + direction * 2 + gridSize) % gridSize, secondaryColumn = (column + direction + gridSize) % gridSize; connect(secondaryRow * gridSize + secondaryColumn, layer * gridSize * gridSize + index + .5, .22); }
       });
     }
-    layers[0].ys.forEach((y, i) => edge(inputX + w * .065, cy, layers[0].x, y, Math.min(input, stage1), i));
-    join(layers[0], layers[1], Math.min(stage1, stage2), 8);
-    join(layers[1], layers[2], Math.min(stage2, stage3), 30);
-    join(layers[2], layers[3], Math.min(stage3, stage4), 60);
-    join(layers[3], layers[4], Math.min(stage4, stage5), 90);
-    layers[4].ys.forEach((y, i) => edge(layers[4].x, y, outputX - 14, cy, Math.min(stage5, reply), i + 120));
-    layers.forEach(layer => layer.ys.forEach(y => dot(layer.x, y, 3, `rgba(100,175,250,${a})`)));
-    aiInput.textContent = locale.input.slice(0, Math.ceil(locale.input.length * input));
-    aiOutput.textContent = locale.output.slice(0, Math.ceil(locale.output.length * reply));
-    aiInput.style.opacity = `${a * input}`;
-    aiOutput.style.opacity = `${a * reply}`;
+    const inputAnchor = { x: inputX + w * .07, y: cy }, outputAnchor = { x: w * .812, y: cy }, edgeNodes = Array.from({ length: gridSize }, (_, row) => row * gridSize + Math.floor(gridSize / 2));
+    edgeNodes.forEach((index, row) => {
+      const connectEndpoint = (from, to, phase, visibility) => {
+        const selected = Math.floor(phase * 19) % 3 === 0, weight = selected ? .84 : .14;
+        ctx.strokeStyle = `rgba(75,158,255,${a * visibility * weight * .3})`; ctx.lineWidth = .55;
+        waveLine(from.x, from.y, to.x, to.y, t * .42, h * .006, phase);
+      };
+      connectEndpoint(inputAnchor, slices[0].nodes[index], row * .74, Math.min(input, visibility[0]));
+      connectEndpoint(slices[sliceCount - 1].nodes[index], outputAnchor, 4 + row * .74, Math.min(reply, visibility[sliceCount - 1]));
+    });
+    slices.forEach(slice => slice.nodes.forEach(node => dot(node.x, node.y, compact ? .72 : 1.05, `rgba(75,158,255,${a * slice.opacity})`)));
+    aiInput.textContent = locale.input.slice(0, Math.ceil(locale.input.length * input)); aiOutput.textContent = locale.output.slice(0, Math.ceil(locale.output.length * reply)); aiInput.style.opacity = `${a * input}`; aiOutput.style.opacity = `${a * reply}`;
   }
 
   function draw(name, w, h, t, a, local) { if (name === "discharge") discharge(w, h, Number.isFinite(local) ? local : t, a); else if (name === "frequency") frequency(w, h, Number.isFinite(local) ? local : t, a); else ({ localization, leak, ai })[name](w, h, t, a); }
